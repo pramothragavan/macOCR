@@ -15,6 +15,8 @@ import ArgumentParserKit
 
 var joiner = " "
 var bigSur = false;
+var filePath: String = "/tmp/ocr.png"
+
 
 if #available(OSX 11, *) {
     bigSur = true;
@@ -75,29 +77,41 @@ let inputURL = URL(fileURLWithPath: "/tmp/ocr.png")
 var recognitionLanguages = ["en-US"]
 
 do {
-    
-    
     let arguments = Array(CommandLine.arguments.dropFirst())
-
     let parser = ArgumentParser(usage: "<options>", overview: "macOCR is a command line app that enables you to turn any text on your screen into text on your clipboard")
+    
+    // Add a new option for file path
+    let fileOption = parser.add(option: "--file", shortName: "-f", kind: String.self, usage: "Path to the PNG file you want to OCR")
     
     if(bigSur){
         let languageOption = parser.add(option: "--language", shortName: "-l", kind: String.self, usage: "Set Language (Supports Big Sur and Above)")
-        
-        
         let parsedArguments = try parser.parse(arguments)
-        let language = parsedArguments.get(languageOption)
         
-        if (language ?? "").isEmpty{
+        if let providedFilePath = parsedArguments.get(fileOption) {
+            filePath = providedFilePath
+        }
+
+        let language = parsedArguments.get(languageOption)
+        if (language ?? "").isEmpty {
             
-        }else{
+        } else {
             recognitionLanguages.insert(language!, at: 0)
+        }
+    } else {
+        let parsedArguments = try parser.parse(arguments)
+        
+        if let providedFilePath = parsedArguments.get(fileOption) {
+            filePath = providedFilePath
         }
     }
 
-    let _ = ScreenCapture.captureRegion(destination: "/tmp/ocr.png")
+    // If a file was provided, skip the screen capture.
+    if filePath == "/tmp/ocr.png" {
+        let _ = ScreenCapture.captureRegion(destination: "/tmp/ocr.png")
+    }
 
-    if let features = detectText(fileName : inputURL), !features.isEmpty{}
+    let inputURL = URL(fileURLWithPath: filePath)
+    if let features = detectText(fileName: inputURL), !features.isEmpty{}
 
 } catch {
     // handle parsing error
